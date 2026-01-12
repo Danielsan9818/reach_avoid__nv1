@@ -1,0 +1,3 @@
+[console_scripts]
+controller = drone_control.controller_node:main
+
