@@ -22,7 +22,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ra = reach_avoid_nv1.reach_avoid_nv1:main',
+            'reach_avoid_node = reach_avoid_nv1.reach_avoid_node:main',
         ],
     },
 )

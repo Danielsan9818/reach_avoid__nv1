@@ -93,27 +93,20 @@ def parse_yaml(context):
         if crazyflies['robots'][robot]['enabled']:
             robots_list.append(robot)
             Nodes.append(Node(
-                package='crazy_encirclement',
-                executable='circle_distortion',
-                name=robot+'_encirclement_node',
-                output='screen',
-                parameters=[{'robot': robot}]
-                ))
-            Nodes.append(Node(
                 package='crazyflie',
                 executable='watch_dog.py',
                 name=robot+'_watch_dog',
                 output='screen',
                 parameters=[{'robot_prefix': robot}]
             ))
-    
     Nodes.append(Node(
-        package='crazy_encirclement',
-        executable='agents_order',
-        name='agents_order',
+        package='reach_avoid_nv1',
+        executable='reach_avoid_node',
+        name='reach_avoid_nv1_node',
         output='screen',
-        parameters= [{'robot_data': robots_list}]
+        parameters=[{'robot': robots_list}]
     ))
+            
     return Nodes
 
 def generate_launch_description():

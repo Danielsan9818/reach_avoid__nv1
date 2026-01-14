@@ -14,7 +14,7 @@ from scipy.linalg import expm, logm
 import time
 import numpy as np
 
-class reach_avoid_nv1(Node):
+class reach_avoid_node(Node):
     def __init__(self):
         """
             Node that sends the crazyflie to a desired position
@@ -344,7 +344,7 @@ class reach_avoid_nv1(Node):
 
 def main():
     rclpy.init()
-    ra = reach_avoid_nv1()
+    ra = reach_avoid_node()
     rclpy.spin(ra)
     ra.destroy_node()
     rclpy.shutdown()
