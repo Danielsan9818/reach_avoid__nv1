@@ -261,18 +261,18 @@ class reach_avoid_node(Node):
         if self.which_area==1:
 
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 8, 8, 2                   # ellipse axes lengths
+            a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
             self.par_ellipsoide = np.array([a,b,c])
 
         elif (self.which_area==2):
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a,b,c,p = 8,5,10,3 # scale x,y,x and exponential
+            a,b,c,p = 0.08,0.05,0.1,3 # scale x,y,x and exponential
             self.par_ellipsoide = np.array([a,b,c,p])                   # lp- ball 
 
         else:
 
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 8, 8, 2                   # ellipse axes lengths
+            a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
             self.par_ellipsoide = np.array([a,b,c])
 
         #min 5cm/s max 100cm/s
