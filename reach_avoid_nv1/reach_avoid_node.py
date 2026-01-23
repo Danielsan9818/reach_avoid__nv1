@@ -66,6 +66,7 @@ class reach_avoid_node(Node):
 
         self.state = 0
         #0-take-off, 1-hover, 2-encirclement, 3-landing
+        self.game_parametrs()
 
         self.create_subscription(
             Bool,
@@ -245,9 +246,9 @@ class reach_avoid_node(Node):
         self.number_pursuers = self.n_agents -1
 
         self.dt=self.timer_period
-        self.evader_speed = np.array([5]) # evader at 5 cm/s  for initial experiments
+        self.evader_speed = 1e-2*np.array([5]) # evader at 5 cm/s  for initial experiments
         # self.pursuers_speed = np.array([20,40,30,21,32])
-        self.pursuers_speed = np.ones(self.number_pursuers)*6 #each pursuer at 6 cm/s for initial experiments
+        self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*6 #each pursuer at 6 cm/s for initial experiments
         # self.r = np.array([30,15,20,50,25])
         self.r = np.ones(self.number_pursuers)*0.5  #capture radius set to 50 cm for safety
 
@@ -260,18 +261,18 @@ class reach_avoid_node(Node):
         if self.which_area==1:
 
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 8, 8, 2                   # ellipse axes lengths
+            a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
             self.par_ellipsoide = np.array([a,b,c])
 
         elif (self.which_area==2):
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a,b,c,p = 8,5,10,3 # scale x,y,x and exponential
+            a,b,c,p = 0.08,0.05,0.1,3 # scale x,y,x and exponential
             self.par_ellipsoide = np.array([a,b,c,p])                   # lp- ball 
 
         else:
 
             center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 8, 8, 2                   # ellipse axes lengths
+            a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
             self.par_ellipsoide = np.array([a,b,c])
 
         #min 5cm/s max 100cm/s

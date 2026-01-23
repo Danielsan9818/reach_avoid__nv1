@@ -11,8 +11,8 @@ def convex_area_3d_1v1(x, par,par_ellipsoide,which_area):
     # par[2] = alpha
     # par[3] = r
 
-    p1 = np.array(par[0])  # evader position?
-    p2 = np.array(par[1])  # pursuer position?
+    p1 = np.array(par[0])  # pursuer position
+    p2 = np.array(par[1])  # evader position
     alpha = par[2]
     r = par[3]
 
@@ -38,9 +38,13 @@ def convex_area_3d_1v1(x, par,par_ellipsoide,which_area):
         F[2] = n1 - alpha * n2 - r
 
     elif (which_area==2):
+        aux1 = (par_ellipsoide[3]*x_vec[0]*(np.abs(x_vec[0]/par_ellipsoide[0])**(par_ellipsoide[3]-2)))/(par_ellipsoide[0]**2)
+        aux2 = (par_ellipsoide[3]*x_vec[1]*(np.abs(x_vec[1]/par_ellipsoide[1])**(par_ellipsoide[3]-2)))/(par_ellipsoide[1]**2)
+        aux3 = (par_ellipsoide[3]*x_vec[2]*(np.abs(x_vec[2]/par_ellipsoide[2])**(par_ellipsoide[3]-2)))/(par_ellipsoide[2]**2)
 
-        F[0] = par_ellipsoide[3]*(np.abs(x_vec[0])**(par_ellipsoide[3]-1))*np.sign(x_vec[0]) - par_ellipsoide[3]*(np.abs(x_vec[2])**(par_ellipsoide[3]-1))*np.sign(x_vec[2]) * (num1 / den1)
-        F[1] = par_ellipsoide[3]*(np.abs(x_vec[1])**(par_ellipsoide[3]-1))*np.sign(x_vec[1]) - par_ellipsoide[3]*(np.abs(x_vec[2])**(par_ellipsoide[3]-1))*np.sign(x_vec[2]) * (num2 / den2)
+
+        F[0] = aux1 - aux3 * (num1 / den1)
+        F[1] = aux2 - aux3 * (num2 / den2)
         F[2] = n1 - alpha * n2 - r
         
     else:
@@ -52,9 +56,9 @@ def convex_area_3d_1v1(x, par,par_ellipsoide,which_area):
 def convex_area_3d_2v1(x1, par,par_ellipsoide,which_area):
 
     # Unpack parameters for readability
-    p1 = np.array(par[0])
-    p2 = np.array(par[1])
-    p3 = np.array(par[2])
+    p1 = np.array(par[0]) # pursuer 1
+    p2 = np.array(par[1]) # pursuer 2
+    p3 = np.array(par[2]) # evader
     a1 = par[3]
     a2 = par[4]
     r1 = par[5]
@@ -142,9 +146,10 @@ def oneVone(pos_pursuer,pos_evader,r,alpha,x0,par_ellipsoide,which_area):
         r
     ]
 
-    opt,_,ier,_ = fsolve(convex_area_3d_1v1, x0, args=(par,par_ellipsoide,which_area,),full_output=True)
+    opt,_,ier,message = fsolve(convex_area_3d_1v1, x0, args=(par,par_ellipsoide,which_area,),full_output=True)
     # print("Solution:", opt)##
     if ier !=1:
+        # print("error:",message)
         opt = np.full_like(x0,np.nan)
     
 
@@ -244,12 +249,18 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
 
     opt_pur1 = np.zeros((n_pur,3))
     for i in range(n_pur):
-        opt_pur1[i]=oneVone(pos_pursuer[i],pos_evader,r[i],alpha[i],x0,par_ellipsoide,which_area)
+        if alpha[i]==0:
+            opt_pur1[i]=np.array([np.nan,np.nan,np.nan])
+        else:
+            opt_pur1[i]=oneVone(pos_pursuer[i],pos_evader,r[i],alpha[i],x0,par_ellipsoide,which_area)
     opt_pur2 = []
     aux_act_pur2=[]
     for i in range(n_pur-1):
         for j in range(i+1,n_pur):
-            aux = twoVone(pos_pursuer[i],pos_pursuer[j],pos_evader,r[i],r[j],alpha[i],alpha[j],x0,par_ellipsoide,which_area)
+            if alpha[i]==0 or alpha[j]==0:
+                aux = np.array([np.nan,np.nan,np.nan])
+            else:
+                aux = twoVone(pos_pursuer[i],pos_pursuer[j],pos_evader,r[i],r[j],alpha[i],alpha[j],x0,par_ellipsoide,which_area)
             opt_pur2.append(aux)
             aux_act_pur2.append([i,j])
     opt_pur3=[]
@@ -257,7 +268,10 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     for i in range(n_pur-2):
         for j in range(i+1,n_pur-1):
             for k in range(j+1,n_pur):
-                aux = threeVone(pos_pursuer[i],pos_pursuer[j],pos_pursuer[k],pos_evader,r[i],r[j],r[k],alpha[i],alpha[j],alpha[k],x0,par_ellipsoide,which_area)
+                if alpha[i]==0 or alpha[j]==0 or alpha[k]==0:
+                    aux = np.array([np.nan,np.nan,np.nan])
+                else:
+                    aux = threeVone(pos_pursuer[i],pos_pursuer[j],pos_pursuer[k],pos_evader,r[i],r[j],r[k],alpha[i],alpha[j],alpha[k],x0,par_ellipsoide,which_area)
                 opt_pur3.append(aux)
                 aux_act_pur3.append([i,j,k])
 

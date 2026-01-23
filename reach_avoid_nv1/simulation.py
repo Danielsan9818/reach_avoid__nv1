@@ -11,9 +11,9 @@ ax = fig.add_subplot(111,projection='3d')
 
 # z positive for real experiment
 # x,y,z lim [-250,250],[-150,150],[30,150]
-pos_pursuer = np.array([[0,0,50],[10,10,40],[2,2,60],[-140,-20,30],[150,3,70]],dtype=float) 
+pos_pursuer = 1e-2*np.array([[0,0,20],[10,10,40],[-50,10,60],[-140,-20,30],[150,3,70]],dtype=float) 
 number_pursuers = len(pos_pursuer)
-pos_evader = np.array([0,-100,150],dtype=float)
+pos_evader = 1e-2*np.array([0,-100,150],dtype=float)
 
 which_area = 2
 # ellipsoid -> 1
@@ -23,7 +23,7 @@ which_area = 2
 if which_area==1:
 
     center = np.array([0, 0, 0])  # x0, y0, z0
-    a, b, c = 8, 8, 2                   # ellipse axes lengths
+    a, b, c = 0.8, 0.8, 0.2                   # ellipse axes lengths
     par_ellipsoide = np.array([a,b,c])
     # theta = np.radians(0)        # rotation angle around Z axis
     u = np.linspace(0, 2 * np.pi, 100)
@@ -36,7 +36,7 @@ if which_area==1:
 elif (which_area==2):
 
     center = np.array([0, 0, 0])  # x0, y0, z0
-    a,b,c,p = 8,5,10,3 # scale x,y,x and exponential
+    a,b,c,p = 0.8,0.1,0.1,3 # scale x,y,x and exponential     p>=2
     par_ellipsoide = np.array([a,b,c,p])                   # lp- ball 
     # par_ellipsoide = np.array([a,b,c])
 
@@ -69,17 +69,19 @@ else:
 # y_rot = x * np.sin(theta) + y * np.cos(theta) + center[1]
 # z_rot = z + center[2]
 
-ax.plot_surface(x, y, z, color='m', alpha=0.2)
+ax.plot_surface(x, y, z, color='m', alpha=0.2, label='Target Area')
 # plt.show()
 
+
+t=0.0
 dt=0.1
 # r = np.array([1,1.1,0.6,0.9,0.1])
 # alpha = np.array([1.1,1.2,1.7,1.9,1.1]) ## greater than 1
 
-evader_speed = np.array([19])
-pursuers_speed = np.array([20,40,30,21,32])
+evader_speed = 1e-2*np.array([19])
+pursuers_speed = 1e-2*np.array([20,40,30,20,20])
 # alpha = pursuers_speed/evader_speed
-r = np.array([30,15,20,50,25])
+r = 1e-2*np.array([30,15,20,50,25])
 #min 5cm/s max 100cm/s
 #ruido posicao 0.1
 #ruido velocidade metade da velocidade
@@ -89,8 +91,8 @@ failure_rate = 0.0
 
 traj_pursuer = [[pos_pursuer[i]] for i in range(number_pursuers)]  # list of lists
 traj_evader = [pos_evader]
-mode=1
-x0=[20.1, 50.1 , 100.0]
+mode=3
+x0=1e-2*np.array([20.1, 50.1 , 100.0])
 
 
 ax.plot(pos_pursuer[:,0],pos_pursuer[:,1],pos_pursuer[:,2], label='Pursuer start', color='b',marker="*",linestyle='')
@@ -107,6 +109,14 @@ else:
     gameValue = (pos_evader[0]**2) / par_ellipsoide[0]**2 + (pos_evader[1]**2) / par_ellipsoide[1]**2 + (pos_evader[2]**2) / par_ellipsoide[2]**2 - 1
 
 while (not any(np.linalg.norm(pos_pursuer-pos_evader,axis=1)<r)) and gameValue>1:
+    
+    ## debug
+    if 2-t<0.1:
+        debug_aux=1
+    ## fixed failures
+    if t>2 and t<2.1:
+        failure_flag[1] = True
+        ax.plot(pos_evader[0],pos_evader[1],pos_evader[2], label='Evader fail time', color='r',marker="x")
     ## failure
     failure_flag |= (np.random.rand(number_pursuers)>(1-failure_rate))
     pursuers_speed[failure_flag] = 0
@@ -116,8 +126,8 @@ while (not any(np.linalg.norm(pos_pursuer-pos_evader,axis=1)<r)) and gameValue>1
         flag_fail = 1
         # break
     ## noise
-    noisy_speedp = np.copy(pursuers_speed) + np.random.uniform(-pursuers_speed/2,pursuers_speed/2,number_pursuers)
-    noisy_speede = np.copy(evader_speed) + np.random.uniform(-evader_speed/2,evader_speed/2,1)
+    noisy_speedp = np.copy(pursuers_speed) #+ np.random.uniform(-pursuers_speed/4,pursuers_speed/4,number_pursuers)
+    noisy_speede = np.copy(evader_speed) #+ np.random.uniform(-evader_speed/4,evader_speed/4,1)
 
     ## control
     if flag_fail:
@@ -141,6 +151,10 @@ while (not any(np.linalg.norm(pos_pursuer-pos_evader,axis=1)<r)) and gameValue>1
         
         gameValue = (pos_evader[0]**2) / par_ellipsoide[0]**2 + (pos_evader[1]**2) / par_ellipsoide[1]**2 + (pos_evader[2]**2) / par_ellipsoide[2]**2 - 1
     
+
+    t+=dt
+
+
     for i in range(number_pursuers):
         traj_pursuer[i].append(pos_pursuer[i].copy())
 
@@ -152,7 +166,7 @@ for i in range(number_pursuers):
     ax.plot(traj_pursuer[i][:,0],
             traj_pursuer[i][:,1],
             traj_pursuer[i][:,2],
-            label=f'Pursuer {i}')
+            label=f'Pursuer {i+1}')
 
 # Plot evader
 ax.plot(traj_evader[:,0],
@@ -165,3 +179,4 @@ ax.legend()
 plt.show()
 print("done")
 print("Game Value:", gameValue)
+print("Time:", t)
