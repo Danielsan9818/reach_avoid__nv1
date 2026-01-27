@@ -11,11 +11,15 @@ ax = fig.add_subplot(111,projection='3d')
 
 # z positive for real experiment
 # x,y,z lim [-250,250],[-150,150],[30,150]
-pos_pursuer = 1e-2*np.array([[0,0,20],[10,10,40],[-50,10,60],[-140,-20,30],[150,3,70]],dtype=float) 
-number_pursuers = len(pos_pursuer)
-pos_evader = 1e-2*np.array([0,-100,150],dtype=float)
 
-which_area = 2
+
+# pos_pursuer = 1e-2*np.array([[0,0,20],[10,10,40],[-50,10,60],[-140,-20,30],[150,3,70]],dtype=float) 
+
+pos_pursuer = 1e-2*np.array([[10,5,30],[-5,5,40]],dtype=float)
+number_pursuers = len(pos_pursuer)
+pos_evader = 1e-2*np.array([-55,10,60],dtype=float)
+
+which_area = 1
 # ellipsoid -> 1
 # n-ball -> 2
 # elliptic paraboloid -> 3
@@ -23,7 +27,7 @@ which_area = 2
 if which_area==1:
 
     center = np.array([0, 0, 0])  # x0, y0, z0
-    a, b, c = 0.8, 0.8, 0.2                   # ellipse axes lengths
+    a, b, c = 0.08, 0.08, 0.02                  # ellipse axes lengths
     par_ellipsoide = np.array([a,b,c])
     # theta = np.radians(0)        # rotation angle around Z axis
     u = np.linspace(0, 2 * np.pi, 100)
@@ -36,7 +40,7 @@ if which_area==1:
 elif (which_area==2):
 
     center = np.array([0, 0, 0])  # x0, y0, z0
-    a,b,c,p = 0.8,0.1,0.1,3 # scale x,y,x and exponential     p>=2
+    a,b,c,p = 0.1,0.1,0.1,3 # scale x,y,x and exponential     p>=2
     par_ellipsoide = np.array([a,b,c,p])                   # lp- ball 
     # par_ellipsoide = np.array([a,b,c])
 
@@ -78,10 +82,12 @@ dt=0.1
 # r = np.array([1,1.1,0.6,0.9,0.1])
 # alpha = np.array([1.1,1.2,1.7,1.9,1.1]) ## greater than 1
 
-evader_speed = 1e-2*np.array([19])
-pursuers_speed = 1e-2*np.array([20,40,30,20,20])
+evader_speed = 1e-2*np.array([5])
+# pursuers_speed = 1e-2*np.array([20,40,30,20,20]) 
+pursuers_speed = 1e-2*np.ones(number_pursuers)*15
 # alpha = pursuers_speed/evader_speed
-r = 1e-2*np.array([30,15,20,50,25])
+# r = 1e-2*np.array([30,15,20,50,25])
+r = np.ones(number_pursuers)*0.5
 #min 5cm/s max 100cm/s
 #ruido posicao 0.1
 #ruido velocidade metade da velocidade
@@ -93,6 +99,8 @@ traj_pursuer = [[pos_pursuer[i]] for i in range(number_pursuers)]  # list of lis
 traj_evader = [pos_evader]
 mode=3
 x0=1e-2*np.array([20.1, 50.1 , 100.0])
+x0 = 1e-2*np.array([10.0,20.0,30.0])
+x0 = pos_evader - 0.1*pos_evader
 
 
 ax.plot(pos_pursuer[:,0],pos_pursuer[:,1],pos_pursuer[:,2], label='Pursuer start', color='b',marker="*",linestyle='')
@@ -111,12 +119,12 @@ else:
 while (not any(np.linalg.norm(pos_pursuer-pos_evader,axis=1)<r)) and gameValue>1:
     
     ## debug
-    if 2-t<0.1:
-        debug_aux=1
-    ## fixed failures
-    if t>2 and t<2.1:
-        failure_flag[1] = True
-        ax.plot(pos_evader[0],pos_evader[1],pos_evader[2], label='Evader fail time', color='r',marker="x")
+    # if 2-t<0.1:
+    #     debug_aux=1
+    # ## fixed failures
+    # if t>2 and t<2.1:
+    #     failure_flag[1] = True
+    #     ax.plot(pos_evader[0],pos_evader[1],pos_evader[2], label='Evader fail time', color='r',marker="x")
     ## failure
     failure_flag |= (np.random.rand(number_pursuers)>(1-failure_rate))
     pursuers_speed[failure_flag] = 0
@@ -134,8 +142,11 @@ while (not any(np.linalg.norm(pos_pursuer-pos_evader,axis=1)<r)) and gameValue>1
         vel_evader = dt*evader_speed*(center-pos_evader)/(np.linalg.norm(center-pos_evader))
         vel_pursuer = np.zeros(pos_pursuer.shape)
     else:
-        vel_pursuer,vel_evader,x0 = Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area)
+        vel_pursuer,vel_evader,x0,flag_error = Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area)
     
+    if flag_error:
+        print("Numerical error - stopping simulation")
+        break
     pos_pursuer = pos_pursuer + vel_pursuer
     pos_evader = pos_evader + vel_evader
 

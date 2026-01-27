@@ -277,7 +277,7 @@ class reach_avoid_node(Node):
         #ruido velocidade metade da velocidade
         self.failure_rate = 0.0
         self.mode=1
-        self.x0=[0.0,0.0,0.0]
+        self.x0 = self.pos_evader - 0.1*self.pos_evader
 
     def Control_loop(self):
 
@@ -292,8 +292,11 @@ class reach_avoid_node(Node):
             self.info("Evader wins!")
             self.state = 3
 
-        self.vel_pursuer,self.vel_evader,self.x0 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
+        self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
         self.get_logger().info(f'{self.x0}')
+        if flag_error:
+            self.info("Numerical error - stopping simulation")
+            self.state = 3
 
         self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
 

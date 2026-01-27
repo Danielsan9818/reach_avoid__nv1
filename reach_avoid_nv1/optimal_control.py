@@ -213,11 +213,17 @@ def global_optima(opt_pur1,opt_pur2,opt_pur3,pos_d,pos_i,alpha,r,aux_pur2,aux_pu
     else:
         value = (x_new[:, 0]**2) / (par_ellipsoide[0])**2 + (x_new[:, 1]**2) / (par_ellipsoide[1])**2 + (x_new[:, 2]**2) / (par_ellipsoide[2])**2 - 1
     
-    Value_func = np.nanmin(value)
-    pur = np.nanargmin(value)
-    optimal_point = x_new[pur]
+    if all(np.isnan(value)):
+        Value_func = np.nan
+        pur = np.nan
+        optimal_point = np.array([0.0,0.0,0.0])
+        return optimal_point,pur,1
+    else:
+        Value_func = np.nanmin(value)
+        pur = np.nanargmin(value)
+        optimal_point = x_new[pur]
 
-    return optimal_point,pur
+    return optimal_point,pur,0
 
 def find_active_pursuer(pur,opt_pur1,opt_pur2,aux_pur2,aux_pur3,mode,optimal_point,pos_pursuer):
     
@@ -253,19 +259,22 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
             opt_pur1[i]=np.array([np.nan,np.nan,np.nan])
         else:
             opt_pur1[i]=oneVone(pos_pursuer[i],pos_evader,r[i],alpha[i],x0,par_ellipsoide,which_area)
-    opt_pur2 = []
-    aux_act_pur2=[]
-    for i in range(n_pur-1):
-        for j in range(i+1,n_pur):
-            if alpha[i]==0 or alpha[j]==0:
-                aux = np.array([np.nan,np.nan,np.nan])
-            else:
-                aux = twoVone(pos_pursuer[i],pos_pursuer[j],pos_evader,r[i],r[j],alpha[i],alpha[j],x0,par_ellipsoide,which_area)
-            opt_pur2.append(aux)
-            aux_act_pur2.append([i,j])
+    if n_pur<2:
+        opt_pur2 = np.array([np.nan,np.nan,np.nan])
+        aux_act_pur2 = np.array([np.nan,np.nan])
+    else:
+        opt_pur2 = []
+        aux_act_pur2=[]
+        for i in range(n_pur-1):
+            for j in range(i+1,n_pur):
+                if alpha[i]==0 or alpha[j]==0:
+                    aux = np.array([np.nan,np.nan,np.nan])
+                else:
+                    aux = twoVone(pos_pursuer[i],pos_pursuer[j],pos_evader,r[i],r[j],alpha[i],alpha[j],x0,par_ellipsoide,which_area)
+                opt_pur2.append(aux)
+                aux_act_pur2.append([i,j])
 
     if n_pur<3:
-
         opt_pur3 = np.array([np.nan,np.nan,np.nan])
         aux_act_pur3 = np.array([np.nan,np.nan,np.nan])
     else:
@@ -281,8 +290,14 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
                     opt_pur3.append(aux)
                     aux_act_pur3.append([i,j,k])
 
-    optimal_point,pur = global_optima(opt_pur1,opt_pur2,opt_pur3,pos_pursuer,pos_evader,alpha,r,aux_act_pur2,aux_act_pur3,par_ellipsoide,which_area)
+    optimal_point,pur,flag_nan = global_optima(opt_pur1,opt_pur2,opt_pur3,pos_pursuer,pos_evader,alpha,r,aux_act_pur2,aux_act_pur3,par_ellipsoide,which_area)
 
+    if flag_nan:
+        center = np.array([0, 0, 0])  # x0, y0, z0
+        vel_evader = dt*evader_speed*(center-pos_evader)/(np.linalg.norm(center-pos_evader))
+        vel_pursuer = np.zeros(pos_pursuer.shape)
+        x0 = center
+        return[vel_pursuer,vel_evader,x0,flag_nan]
     target = find_active_pursuer(pur,opt_pur1,opt_pur2,aux_act_pur2,aux_act_pur3,mode,optimal_point,pos_pursuer)
 
     aux_norm = np.linalg.norm(target-pos_pursuer,axis=1,keepdims=True)
@@ -296,4 +311,4 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     # vel_pursuer = np.zeros((n_pur,3))
     # for i in range(n_pur):
     #     vel_pursuer[i] = [0,0,1]
-    return[vel_pursuer,vel_evader,x0]
+    return[vel_pursuer,vel_evader,x0,flag_nan]
