@@ -58,7 +58,7 @@ class reach_avoid_node(Node):
         self.t_landing = np.arange(t_max, 0.1, -self.timer_period)
         self.r_landing = np.zeros((3,len(self.t_landing),self.n_agents))
 
-        self.position_pub = dict({'C04':None,'C13':None,'C05':None}) #,'C14':None,'C20':None)
+        self.position_pub = {robot: None for robot in self.robots}#dict({'C04':None,'C13':None,'C05':None}) #,'C14':None,'C20':None)
 
         self.state = 0
         #0-take-off, 1-hover, 2-encirclement, 3-landing
@@ -92,9 +92,7 @@ class reach_avoid_node(Node):
         for i in range(len(self.robots)):
             robot = self.robots[i]
             self.position_pub[robot] = self.create_publisher(Position,'/'+ self.robots[i] + '/cmd_position', 10) #create list with publishers for robot in self.robots
-        self.optimal_cp_pub_pur = self.create_publisher(Position,'/'+ self.x0 + '/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
-        self.optimal_cp_pub_eva = self.create_publisher(Position,'/'+ self.x0_eva + '/optimal_capture_point_eva', 10) #create list with publishers for optimal capture point for evader
-
+        
         # input("Press Enter to takeoff")
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
@@ -297,6 +295,11 @@ class reach_avoid_node(Node):
         self.mode=1
         self.x0 = self.pos_evader - 0.1*self.pos_evader
         self.x0_eva = self.x0
+
+
+        self.optimal_cp_pub_pur = self.create_publisher(Position,'/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
+        self.optimal_cp_pub_eva = self.create_publisher(Position,'/optimal_capture_point_eva', 10) #create list with publishers for optimal capture point for evader
+
 
     def Control_loop(self):
 
