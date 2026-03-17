@@ -1,4 +1,5 @@
 from reach_avoid_nv1.optimal_control import Optimal_Control
+from reach_avoid_nv1.optimal_control_noise import Optimal_Control_noise
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy,QoSDurabilityPolicy
@@ -40,7 +41,7 @@ class reach_avoid_node(Node):
         self.final_pose = np.zeros((self.n_agents, 3))
         self.current_pos = np.zeros((self.n_agents, 3))
         self.initial_pose = np.zeros((self.n_agents, 3))
-        self.hover_height = 1e-2*np.array([30.0,40.0,60.0])  #hover heights for each agent in cm
+        self.hover_height = 1e-2*np.array([30.0,40.0,60.0])  #hover heights for each agent in 1e-2* np.array(cm)
         self.leader = None
         self.follower = None
         self.Rot_des = np.eye(3)
@@ -91,7 +92,8 @@ class reach_avoid_node(Node):
         for i in range(len(self.robots)):
             robot = self.robots[i]
             self.position_pub[robot] = self.create_publisher(Position,'/'+ self.robots[i] + '/cmd_position', 10) #create list with publishers for robot in self.robots
-
+        self.optimal_cp_pub_pur = self.create_publisher(Position,'/'+ self.x0 + '/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
+        self.optimal_cp_pub_eva = self.create_publisher(Position,'/'+ self.x0_eva + '/optimal_capture_point_eva', 10) #create list with publishers for optimal capture point for evader
 
         # input("Press Enter to takeoff")
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -116,6 +118,7 @@ class reach_avoid_node(Node):
                 for i,robot in enumerate(self.robots):
                     
                     self.send_position(self.send_positions_pur_eva[i,:],robot)
+                    self.send_optimal_capture_point(self.x0,self.x0_eva)
                 # if np.linalg.norm(self.current_pos-target_r) < 0.05:
             
             elif self.state == 3:
@@ -231,6 +234,19 @@ class reach_avoid_node(Node):
 
         self.position_pub[robot].publish(msg)
 
+    def send_optimal_capture_point(self,x0,x0_eva):
+        msg_pur = Position()
+        msg_pur.x = float(x0[0])
+        msg_pur.y = float(x0[1])
+        msg_pur.z = float(x0[2])
+        self.optimal_cp_pub_pur.publish(msg_pur)
+
+        msg_eva = Position()
+        msg_eva.x = float(x0_eva[0])
+        msg_eva.y = float(x0_eva[1])
+        msg_eva.z = float(x0_eva[2])
+
+        self.optimal_cp_pub_eva.publish(msg_eva)
 
     def interpolate(self, p0, p1, n):
         p0 = np.array(p0)
@@ -241,6 +257,7 @@ class reach_avoid_node(Node):
     
     def game_parametrs(self):
         self.number_pursuers = self.n_agents -1
+        self.evader_mode = 1 #1 - optimal, 2 - straight (0,0,0)
 
         self.dt=self.timer_period
         self.evader_speed = 1e-2*np.array([5]) # evader at 5 cm/s  for initial experiments
@@ -251,6 +268,7 @@ class reach_avoid_node(Node):
 
         self.noisy_speedp = self.pursuers_speed
         self.noisy_speede = self.evader_speed
+        self.estimated_evader_speed = 0.99*np.min(self.pursuers_speed)
 
 
 
@@ -278,6 +296,7 @@ class reach_avoid_node(Node):
         self.failure_rate = 0.0
         self.mode=1
         self.x0 = self.pos_evader - 0.1*self.pos_evader
+        self.x0_eva = self.x0
 
     def Control_loop(self):
 
@@ -291,12 +310,18 @@ class reach_avoid_node(Node):
         if self.evader_win(self.pos_evader):
             self.info("Evader wins!")
             self.state = 3
+        
+
+        self.vel_pursuer_real,self.vel_evader,self.x0_eva = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode)
+        self.vel_pursuer,self.vel_evader_noisy,self.x0 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
 
         self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
         self.get_logger().info(f'{self.x0}')
         if flag_error:
-            self.info("Numerical error - stopping simulation")
+            self.info("Numerical error - stopping experiment")
             self.state = 3
+
+        
 
         self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
 
