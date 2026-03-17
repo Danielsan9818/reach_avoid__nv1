@@ -327,8 +327,12 @@ class reach_avoid_node(Node):
         
 
         self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
+        self.store_positions_before_limitation = self.send_positions_pur_eva
 
         self.send_positions_pur_eva = self.env_limitations(self.send_positions_pur_eva)
+
+        if np.array_equal(self.send_positions_pur_eva,self.store_positions_before_limitation) == False:
+            self.info("Position limited by environment constraints")
 
 
         # return self.send_positions_pur_eva
