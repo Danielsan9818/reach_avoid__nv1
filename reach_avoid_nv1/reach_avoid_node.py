@@ -15,13 +15,16 @@ from scipy.linalg import expm, logm
 import time
 import numpy as np
 
+from crazyflie_py import Crazyswarm
+
 class reach_avoid_node(Node):
-    def __init__(self):
+    def __init__(self,swarm=None) -> None:
         """
             Node that sends the crazyflie to a desired position
             The desired position comes from the distortion of a circle
         """
         super().__init__('reach_avoid_nv1')
+        self.swarm = swarm
         self.info = self.get_logger().info
         self.info('reach avoid game node has been started.')
         self.declare_parameter('robots', ['C04', 'C14', 'C05'])#,'C14','C20']) 
@@ -93,6 +96,15 @@ class reach_avoid_node(Node):
             robot = self.robots[i]
             self.position_pub[robot] = self.create_publisher(Position,'/'+ self.robots[i] + '/cmd_position', 10) #create list with publishers for robot in self.robots
         
+        if swarm:
+            self.timeHelper = self.swarm.timeHelper
+            self.allcfs = self.swarm.allcfs
+
+            # arm (one by one)
+            for cf in self.allcfs.crazyflies:
+                cf.arm(True)
+                self.timeHelper.sleep(1.0)
+
         # input("Press Enter to takeoff")
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
@@ -373,8 +385,11 @@ class reach_avoid_node(Node):
         return False
 
 def main():
-    rclpy.init()
-    ra = reach_avoid_node()
+    swarm = Crazyswarm()
+    if not rclpy.ok():
+        rclpy.init()
+    # rclpy.init()
+    ra = reach_avoid_node(swarm)
     rclpy.spin(ra)
     ra.destroy_node()
     rclpy.shutdown()
