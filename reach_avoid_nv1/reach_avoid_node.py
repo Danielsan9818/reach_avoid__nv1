@@ -27,9 +27,12 @@ class reach_avoid_node(Node):
         self.swarm = swarm
         self.info = self.get_logger().info
         self.info('reach avoid game node has been started.')
-        self.declare_parameter('robots', ['C04', 'C14', 'C05'])#,'C14','C20']) 
+        self.declare_parameter('pursuers', ['C25'])#,'C14','C20']) 
+        self.declare_parameter('evader', ['C26'])
   
-        self.robots = self.get_parameter('robots').value
+        self.pursuers = self.get_parameter('pursuers').value
+        self.evader = self.get_parameter('evader').value
+        self.robots = np.vstack((self.pursuers,self.evader))
         self.n_agents  = len(self.robots)
         self.reboot_client = {}
 
@@ -305,6 +308,11 @@ class reach_avoid_node(Node):
         #ruido velocidade metade da velocidade
         self.failure_rate = 0.0
         self.mode=1
+
+
+        self.pos_pursuers = self.current_pos[:self.number_pursuers,:]
+        self.pos_evader = self.current_pos[self.number_pursuers,:]
+
         self.x0 = self.pos_evader - 0.1*self.pos_evader
         self.x0_eva = self.x0
 
@@ -326,16 +334,21 @@ class reach_avoid_node(Node):
             self.info("Evader wins!")
             self.state = 3
         
+        self.info(f"pos_pursuers:{self.pos_pursuers}")
+        self.info(f"pos_evaders:{self.pos_evader}")
 
-        self.vel_pursuer_real,self.vel_evader,self.x0_eva = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode)
-        self.vel_pursuer,self.vel_evader_noisy,self.x0 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
+        self.vel_pursuer_real,self.vel_evader,self.x0_eva,flag_error1 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.get_logger())
+        self.vel_pursuer,self.vel_evader_noisy,self.x0,flag_error2 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
 
-        self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
+        # self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
         self.get_logger().info(f'{self.x0}')
-        if flag_error:
-            self.info("Numerical error - stopping experiment")
+        if flag_error1:
+            self.info("Numerical error optimal control- stopping experiment")
             self.state = 3
 
+        if flag_error2:
+            self.info("Numerical error optimal control noise- stopping experiment")
+            self.state = 3
         
 
         self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
@@ -389,7 +402,7 @@ def main():
     if not rclpy.ok():
         rclpy.init()
     # rclpy.init()
-    ra = reach_avoid_node(swarm)
+    ra = reach_avoid_node()
     rclpy.spin(ra)
     ra.destroy_node()
     rclpy.shutdown()

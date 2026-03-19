@@ -91,14 +91,23 @@ def parse_yaml(context):
     robots_list = []
     for robot in crazyflies['robots']:
         if crazyflies['robots'][robot]['enabled']:
-            robots_list.append(robot)
-            Nodes.append(Node(
-                package='crazyflie',
-                executable='watch_dog.py',
-                name=robot+'_watch_dog',
-                output='screen',
-                parameters=[{'robot_prefix': robot}]
-            ))
+            if crazyflies['robots'][robot]['role'] == 'pursuer':
+                robots_list.append(robot)
+                
+            if crazyflies['robots'][robot]['role'] == 'evader':
+                evader = robot
+                
+    for robot in robots_list:
+        Nodes.append(Node(
+                    package='crazyflie',
+                    executable='watch_dog.py',
+                    name=robot+'_watch_dog',
+                    output='screen',
+                    parameters=[{'robot_prefix': robot,
+                                 'evader':evader}]
+                ))
+
+
     Nodes.append(Node(
         package='reach_avoid_nv1',
         executable='reach_avoid_node',

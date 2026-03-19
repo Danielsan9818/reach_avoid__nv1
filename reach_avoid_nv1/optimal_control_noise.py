@@ -261,6 +261,7 @@ def find_active_pursuer(pur,opt_pur1,opt_pur2,aux_pur2,aux_pur3,mode,optimal_poi
 
 def Optimal_Control_noise(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area,evader_mode,estimated_evader_speed):
     n_pur = len(pos_pursuer)
+    print("entered the function")
     # x0 = [0.1, 0.1, 0.1]  # initial guess
     worst_case_evader_speed = estimated_evader_speed #+ 3*std_evader_speed
     # if worst_case_evader_speed>np.min(pursuers_speed):

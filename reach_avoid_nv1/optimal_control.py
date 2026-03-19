@@ -259,7 +259,8 @@ def find_active_pursuer(pur,opt_pur1,opt_pur2,aux_pur2,aux_pur3,mode,optimal_poi
 
     return target
 
-def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area,evader_mode,ax):
+def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area,evader_mode,logger):
+    
     n_pur = len(pos_pursuer)
     # x0 = [0.1, 0.1, 0.1]  # initial guess
     alpha = pursuers_speed/evader_speed
@@ -313,6 +314,8 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     
     target = find_active_pursuer(pur,opt_pur1,opt_pur2,aux_act_pur2,aux_act_pur3,mode,optimal_point,pos_pursuer)
 
+    logger.info("after active pursuer")
+
     aux_norm = np.linalg.norm(target-pos_pursuer,axis=1,keepdims=True)
     aux_norm[aux_norm==0] = 1e-8
     vel_pursuer = (dt*noisy_speedp.reshape(-1,1)*(target-pos_pursuer)/aux_norm)
@@ -325,6 +328,8 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
         vel_evader = dt*noisy_speede*(optimal_point-pos_evader)/np.linalg.norm(optimal_point-pos_evader)
     x0 = optimal_point
     vel_pursuer = vel_pursuer.reshape((n_pur,3))
+
+    logger.info("end of function")
     ##
     # vel_evader = np.array([1,0,0])
     # vel_pursuer = np.zeros((n_pur,3))
