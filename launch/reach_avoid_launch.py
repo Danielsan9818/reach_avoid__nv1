@@ -93,19 +93,33 @@ def parse_yaml(context):
         if crazyflies['robots'][robot]['enabled']:
             if crazyflies['robots'][robot]['role'] == 'pursuer':
                 robots_list.append(robot)
-                
-            if crazyflies['robots'][robot]['role'] == 'evader':
-                evader = robot
-                
-    for robot in robots_list:
-        Nodes.append(Node(
+                Nodes.append(Node(
                     package='crazyflie',
                     executable='watch_dog.py',
                     name=robot+'_watch_dog',
                     output='screen',
-                    parameters=[{'robot_prefix': robot,
-                                 'evader':evader}]
+                    parameters=[{'pursuers': robot}]
                 ))
+                
+            if crazyflies['robots'][robot]['role'] == 'evader':
+                evader = robot
+                Nodes.append(Node(
+                    package='crazyflie',
+                    executable='watch_dog.py',
+                    name=robot+'_watch_dog',
+                    output='screen',
+                    parameters=[{'evader':evader}]
+                ))
+                
+    # for robot in robots_list:
+    #     Nodes.append(Node(
+    #                 package='crazyflie',
+    #                 executable='watch_dog.py',
+    #                 name=robot+'_watch_dog',
+    #                 output='screen',
+    #                 parameters=[{'robot_prefix': robot,
+    #                              'evader':evader}]
+    #             ))
 
 
     Nodes.append(Node(
@@ -113,7 +127,8 @@ def parse_yaml(context):
         executable='reach_avoid_node',
         name='reach_avoid_nv1_node',
         output='screen',
-        parameters=[{'robots': robots_list}]
+        parameters=[{'pursuers': robots_list,
+                     'evaders':evader}]
     ))
             
     return Nodes

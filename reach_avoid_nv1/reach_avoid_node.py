@@ -27,17 +27,18 @@ class reach_avoid_node(Node):
         self.swarm = swarm
         self.info = self.get_logger().info
         self.info('reach avoid game node has been started.')
-        self.declare_parameter('pursuers', ['C25'])#,'C14','C20']) 
-        self.declare_parameter('evader', ['C26'])
+        self.declare_parameter('pursuers', ['C26'])#,'C14','C20']) 
+        self.declare_parameter('evader', 'C25')
   
-        self.pursuers = self.get_parameter('pursuers').value
-        self.evader = self.get_parameter('evader').value
-        self.robots = np.vstack((self.pursuers,self.evader))
+        self.pursuers = list(self.get_parameter('pursuers').value)
+        self.evader = str(self.get_parameter('evader').value)
+        self.robots = self.pursuers +[self.evader]
         self.n_agents  = len(self.robots)
         self.reboot_client = {}
 
         for robot in self.robots:
-            self.reboot_client[robot] = self.create_client(Empty, robot + '/reboot')
+            robot_name = str(robot)
+            self.reboot_client[robot_name] = self.create_client(Empty, robot_name + '/reboot')
 
         self.has_initial_pose = [False] * self.n_agents
         self.has_final = [False] * self.n_agents
@@ -322,6 +323,8 @@ class reach_avoid_node(Node):
 
 
     def Control_loop(self):
+
+        self.info(f"type position{type(self.current_pos)}")
 
         self.pos_pursuers = self.current_pos[:self.number_pursuers,:]
         self.pos_evader = self.current_pos[self.number_pursuers,:]
