@@ -149,9 +149,12 @@ class reach_avoid_node(Node):
             elif self.state == 2: 
                 # target_r = self.interpolated_points[self.current_point_index] #here you calculate your desired position
                 self.Control_loop() #call your control loop that returns the desired position
+
+                self.test_send_position = np.array(([-0.5,0,0.3],[-1,0,0.3]))
                 for i,robot in enumerate(self.robots):
                     
                     self.send_position(self.send_positions_pur_eva[i,:],robot)
+                    # self.send_position(self.test_send_position[i,:],robot)
                     self.send_optimal_capture_point(self.x0,self.x0_eva)
                 # if np.linalg.norm(self.current_pos-target_r) < 0.05:
             
@@ -276,7 +279,8 @@ class reach_avoid_node(Node):
         time.sleep(1.0)    
 
     def send_position(self,r,robot):
-
+        
+        self.info(f"position sent, robot:{robot}, position:{r}")
         msg = Position()
         msg.x = float(r[0])
         msg.y = float(r[1])
@@ -310,9 +314,9 @@ class reach_avoid_node(Node):
         self.evader_mode = 1 #1 - optimal, 2 - straight (0,0,0)
 
         self.dt=self.timer_period
-        self.evader_speed = 1e-2*np.array([5]) # evader at 5 cm/s  for initial experiments
+        self.evader_speed = 1e-2*np.array([50]) # evader at 5 cm/s  for initial experiments
         # self.pursuers_speed = np.array([20,40,30,21,32])
-        self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*15 #each pursuer at 6 cm/s for initial experiments
+        self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*70 #each pursuer at 6 cm/s for initial experiments
         # self.r = np.array([30,15,20,50,25])
         self.r = np.ones(self.number_pursuers)*0.3  #capture radius set to 50 cm for safety
 
@@ -385,13 +389,17 @@ class reach_avoid_node(Node):
             
             self.info(f"pos_pursuers:{self.pos_pursuers}")
             self.info(f"pos_evaders:{self.pos_evader}")
-            self.info(f"x0:{self.x0}")
+            # self.info(f"x0:{self.x0}")
+
+            self.evader_speed_noisy = self.evader_speed + np.random.uniform(0,15)-10
+            self.noisy_speede = self.evader_speed + np.random.uniform(0,15)-10
+            self.noisy_speede = np.clip(self.noisy_speede,0,np.min(self.pursuers_speed))
 
             self.vel_pursuer_real,self.vel_evader,self.x0_eva,flag_error1 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.get_logger())
             self.vel_pursuer,self.vel_evader_noisy,self.x0,flag_error2 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
 
             # self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
-            self.get_logger().info(f'{self.x0}')
+            self.get_logger().info(f'optimal point for pursuer:{self.x0}')
             if flag_error1:
                 self.info("Numerical error optimal control- stopping experiment")
                 self.state = 3
@@ -408,6 +416,9 @@ class reach_avoid_node(Node):
 
             if np.array_equal(self.send_positions_pur_eva,self.store_positions_before_limitation) == False:
                 self.info("Position limited by environment constraints")
+
+            self.info(f"Pursuer velocity:{self.vel_pursuer}, Evader velocity:{self.vel_evader}")
+            self.info(f"New position:{self.send_positions_pur_eva}")
         else:
             self.send_positions_pur_eva = self.current_pos
 

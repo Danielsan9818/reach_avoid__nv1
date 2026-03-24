@@ -264,8 +264,8 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     n_pur = len(pos_pursuer)
     # x0 = [0.1, 0.1, 0.1]  # initial guess
     alpha = pursuers_speed/evader_speed
-    logger.info("I can see inside now")
-    logger.info(f"pos_pursuer:{pos_pursuer}, pos_evader:{pos_evader},r:{r},alpha:{alpha},x0:{x0}")
+    # logger.info("I can see inside now")
+    # logger.info(f"pos_pursuer:{pos_pursuer}, pos_evader:{pos_evader},r:{r},alpha:{alpha},x0:{x0}")
     opt_pur1 = np.zeros((n_pur,3))
     for i in range(n_pur):
         if alpha[i]==0:
@@ -321,7 +321,7 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     
     target = find_active_pursuer(pur,opt_pur1,opt_pur2,aux_act_pur2,aux_act_pur3,mode,optimal_point,pos_pursuer)
 
-    logger.info("after active pursuer")
+    # logger.info("after active pursuer")
 
     aux_norm = np.linalg.norm(target-pos_pursuer,axis=1,keepdims=True)
     aux_norm[aux_norm==0] = 1e-8
@@ -336,7 +336,7 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     x0 = optimal_point
     vel_pursuer = vel_pursuer.reshape((n_pur,3))
 
-    logger.info("end of function")
+    # logger.info("end of function")
     ##
     # vel_evader = np.array([1,0,0])
     # vel_pursuer = np.zeros((n_pur,3))
