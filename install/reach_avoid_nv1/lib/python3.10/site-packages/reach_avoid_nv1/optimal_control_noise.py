@@ -232,7 +232,7 @@ def global_optima(opt_pur1,opt_pur2,opt_pur3,pos_d,pos_i,alpha,r,aux_pur2,aux_pu
         pur = np.nanargmin(value)
         optimal_point = x_new[pur]
 
-    # ax.plot(optimal_point[0], optimal_point[1], optimal_point[2], marker='o', color='r', markersize=10, label='Optimal Point real')
+    # ax.plot(optimal_point[0], optimal_point[1], optimal_point[2], marker='*', color='g', markersize=1, label = 'Robust capture point')
 
     return optimal_point,pur,0
 
@@ -259,21 +259,22 @@ def find_active_pursuer(pur,opt_pur1,opt_pur2,aux_pur2,aux_pur3,mode,optimal_poi
 
     return target
 
-def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area,evader_mode,logger):
-    
+def Optimal_Control_noise(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt,x0,noisy_speedp,noisy_speede,par_ellipsoide,which_area,evader_mode,estimated_evader_speed):
     n_pur = len(pos_pursuer)
+    print("entered the function")
     # x0 = [0.1, 0.1, 0.1]  # initial guess
-    alpha = pursuers_speed/evader_speed
-    logger.info("I can see inside now")
-    logger.info(f"pos_pursuer:{pos_pursuer}, pos_evader:{pos_evader},r:{r},alpha:{alpha},x0:{x0}")
+    worst_case_evader_speed = estimated_evader_speed #+ 3*std_evader_speed
+    # if worst_case_evader_speed>np.min(pursuers_speed):
+    #     print("Evader faster than one pursuer")
+    #     return [np.zeros((n_pur,3)),np.zeros(3),x0]
+    alpha = pursuers_speed/worst_case_evader_speed
+
     opt_pur1 = np.zeros((n_pur,3))
     for i in range(n_pur):
         if alpha[i]==0:
             opt_pur1[i]=np.array([np.nan,np.nan,np.nan])
-            logger.info("nan in 1v1")
         else:
             opt_pur1[i]=oneVone(pos_pursuer[i],pos_evader,r[i],alpha[i],x0,par_ellipsoide,which_area)
-
 
     if n_pur<2:
         opt_pur2 = np.array([np.nan,np.nan,np.nan])
@@ -306,10 +307,6 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
                     opt_pur3.append(aux)
                     aux_act_pur3.append([i,j,k])
 
-    logger.info(f"opt_pur1{opt_pur1}")
-    # logger.info(f"opt_pur2{opt_pur2}")
-    # logger.info(f"opt_pur3{opt_pur3}")
-
     optimal_point,pur,flag_nan = global_optima(opt_pur1,opt_pur2,opt_pur3,pos_pursuer,pos_evader,alpha,r,aux_act_pur2,aux_act_pur3,par_ellipsoide,which_area)
 
     if flag_nan:
@@ -320,8 +317,6 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
         return[vel_pursuer,vel_evader,x0,flag_nan]
     
     target = find_active_pursuer(pur,opt_pur1,opt_pur2,aux_act_pur2,aux_act_pur3,mode,optimal_point,pos_pursuer)
-
-    logger.info("after active pursuer")
 
     aux_norm = np.linalg.norm(target-pos_pursuer,axis=1,keepdims=True)
     aux_norm[aux_norm==0] = 1e-8
@@ -335,8 +330,6 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
         vel_evader = dt*noisy_speede*(optimal_point-pos_evader)/np.linalg.norm(optimal_point-pos_evader)
     x0 = optimal_point
     vel_pursuer = vel_pursuer.reshape((n_pur,3))
-
-    logger.info("end of function")
     ##
     # vel_evader = np.array([1,0,0])
     # vel_pursuer = np.zeros((n_pur,3))

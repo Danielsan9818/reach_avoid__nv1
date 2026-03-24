@@ -13,8 +13,6 @@ from std_msgs.msg import Float32MultiArray, Float32
 from geometry_msgs.msg import Pose, Twist, PoseStamped
 from scipy.linalg import expm, logm
 import time
-
-from crazyflie_interfaces.srv import Arm
 import numpy as np
 
 from crazyflie_py import Crazyswarm
@@ -31,13 +29,10 @@ class reach_avoid_node(Node):
         self.info('reach avoid game node has been started.')
         self.declare_parameter('pursuers', ['C26'])#,'C14','C20']) 
         self.declare_parameter('evader', 'C25')
-
-        
   
         self.pursuers = list(self.get_parameter('pursuers').value)
         self.evader = str(self.get_parameter('evader').value)
         self.robots = self.pursuers +[self.evader]
-        self.get_logger().info(f'pursuer:{self.pursuers},evader{self.evader}')
         self.n_agents  = len(self.robots)
         self.reboot_client = {}
 
@@ -59,7 +54,6 @@ class reach_avoid_node(Node):
         self.Rot_des = np.eye(3)
         self.target_r = np.zeros(3)
         self.timer_period = 0.1
-        self.game_start = True
 
         self.i_landing = 0
         self.i_takeoff = 0
@@ -75,6 +69,7 @@ class reach_avoid_node(Node):
 
         self.state = 0
         #0-take-off, 1-hover, 2-encirclement, 3-landing
+        self.game_parametrs()
 
         self.create_subscription(
             Bool,
@@ -98,7 +93,6 @@ class reach_avoid_node(Node):
         )
 
         while (not all(self.has_initial_pose)):
-            self.get_logger().info('entered spin')
             rclpy.spin_once(self, timeout_sec=0.1)
 
 
@@ -117,20 +111,6 @@ class reach_avoid_node(Node):
 
         # input("Press Enter to takeoff")
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
-
-        self.arm_client = [None for robot in self.robots]
-        for i in range(len(self.robots)):
-            robot = self.robots[i]
-            self.get_logger().info(f'i:{i},robot:{robot}')
-            self.arm_client[i] = self.create_client(Arm, robot + '/arm')
-            # Wait until the service is available
-            while not self.arm_client[i].wait_for_service(timeout_sec=1.0):
-                self.get_logger().info('Service not available, waiting again...')
-            self.arm(i)
-            time.sleep(2)
-
-
-
 
     def timer_callback(self):
 
@@ -195,7 +175,6 @@ class reach_avoid_node(Node):
                 self.has_initial_pose[i] = True    
                 
             elif not self.land_flag[i]:
-                # self.get_logger().info('entered current pos')
 
                 self.current_pos[i,0] = robot_pose.position.x
                 self.current_pos[i,1] = robot_pose.position.y
@@ -212,21 +191,6 @@ class reach_avoid_node(Node):
                 self.has_final[i] = True
 
 
-    def arm(self,i):
-        ''' Reboot the system. '''
-        req = Arm.Request()
-        req.arm = True
-        self.arm_client[i].call_async(req)
-        # Call the service and get the response asynchronously
-        future = self.arm_client[i].call_async(req)
-        # Wait for the result and handle the response
-        rclpy.spin_until_future_complete(self, future)
-
-        # Now handle the response
-        if future.result() is not None:
-            self.get_logger().info(f'Service call successful, response: {future.result()}')
-        else:
-            self.get_logger().error('Service call failed')  
 
     def takeoff(self,robot,i):
         self.send_position(self.r_takeoff[:,self.i_takeoff,i],robot)
@@ -314,7 +278,7 @@ class reach_avoid_node(Node):
         # self.pursuers_speed = np.array([20,40,30,21,32])
         self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*15 #each pursuer at 6 cm/s for initial experiments
         # self.r = np.array([30,15,20,50,25])
-        self.r = np.ones(self.number_pursuers)*0.3  #capture radius set to 50 cm for safety
+        self.r = np.ones(self.number_pursuers)*0.5  #capture radius set to 50 cm for safety
 
         self.noisy_speedp = self.pursuers_speed
         self.noisy_speede = self.evader_speed
@@ -346,15 +310,12 @@ class reach_avoid_node(Node):
         self.failure_rate = 0.0
         self.mode=1
 
-        self.get_logger().info(f'current pos{self.current_pos}')
 
         self.pos_pursuers = np.round(np.asarray(self.current_pos[:self.number_pursuers,:], dtype=float),4)
         self.pos_evader = np.round(np.asarray(self.current_pos[self.number_pursuers,:],dtype=float),4)
-        self.get_logger().info(f'self.pos_evader{self.pos_evader}')
 
         self.x0 = self.pos_evader - 0.1*self.pos_evader
         self.x0_eva = self.x0
-        self.get_logger().info(f'x0:{self.x0}')
 
 
         self.optimal_cp_pub_pur = self.create_publisher(Position,'/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
@@ -362,11 +323,6 @@ class reach_avoid_node(Node):
 
 
     def Control_loop(self):
-
-        if self.game_start:
-
-            self.game_parametrs()
-            self.game_start = False
 
         self.info(f"type position{type(self.current_pos)}")
 
@@ -380,36 +336,31 @@ class reach_avoid_node(Node):
         if self.evader_win(self.pos_evader):
             self.info("Evader wins!")
             self.state = 3
+        
+        self.info(f"pos_pursuers:{self.pos_pursuers}")
+        self.info(f"pos_evaders:{self.pos_evader}")
 
-        if self.state !=3:
-            
-            self.info(f"pos_pursuers:{self.pos_pursuers}")
-            self.info(f"pos_evaders:{self.pos_evader}")
-            self.info(f"x0:{self.x0}")
+        self.vel_pursuer_real,self.vel_evader,self.x0_eva,flag_error1 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.get_logger())
+        self.vel_pursuer,self.vel_evader_noisy,self.x0,flag_error2 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
 
-            self.vel_pursuer_real,self.vel_evader,self.x0_eva,flag_error1 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.get_logger())
-            self.vel_pursuer,self.vel_evader_noisy,self.x0,flag_error2 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
+        # self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
+        self.get_logger().info(f'{self.x0}')
+        if flag_error1:
+            self.info("Numerical error optimal control- stopping experiment")
+            self.state = 3
 
-            # self.vel_pursuer,self.vel_evader,self.x0,flag_error = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area)
-            self.get_logger().info(f'{self.x0}')
-            if flag_error1:
-                self.info("Numerical error optimal control- stopping experiment")
-                self.state = 3
+        if flag_error2:
+            self.info("Numerical error optimal control noise- stopping experiment")
+            self.state = 3
+        
 
-            if flag_error2:
-                self.info("Numerical error optimal control noise- stopping experiment")
-                self.state = 3
-            
+        self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
+        self.store_positions_before_limitation = self.send_positions_pur_eva
 
-            self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
-            self.store_positions_before_limitation = self.send_positions_pur_eva
+        self.send_positions_pur_eva = self.env_limitations(self.send_positions_pur_eva)
 
-            self.send_positions_pur_eva = self.env_limitations(self.send_positions_pur_eva)
-
-            if np.array_equal(self.send_positions_pur_eva,self.store_positions_before_limitation) == False:
-                self.info("Position limited by environment constraints")
-        else:
-            self.send_positions_pur_eva = self.current_pos
+        if np.array_equal(self.send_positions_pur_eva,self.store_positions_before_limitation) == False:
+            self.info("Position limited by environment constraints")
 
 
         # return self.send_positions_pur_eva
@@ -450,7 +401,7 @@ class reach_avoid_node(Node):
         return False
 
 def main():
-    # swarm = Crazyswarm()
+    swarm = Crazyswarm()
     if not rclpy.ok():
         rclpy.init()
     # rclpy.init()

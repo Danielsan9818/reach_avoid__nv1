@@ -1,0 +1,2 @@
+[console_scripts]
+reach_avoid_node = reach_avoid_nv1.reach_avoid_node:main

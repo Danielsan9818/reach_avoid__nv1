@@ -265,7 +265,6 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
     # x0 = [0.1, 0.1, 0.1]  # initial guess
     alpha = pursuers_speed/evader_speed
     logger.info("I can see inside now")
-    logger.info(f"pos_pursuer:{pos_pursuer}, pos_evader:{pos_evader},r:{r},alpha:{alpha},x0:{x0}")
     opt_pur1 = np.zeros((n_pur,3))
     for i in range(n_pur):
         if alpha[i]==0:
@@ -306,9 +305,9 @@ def Optimal_Control(pos_pursuer,pos_evader,r,pursuers_speed,evader_speed,mode,dt
                     opt_pur3.append(aux)
                     aux_act_pur3.append([i,j,k])
 
-    logger.info(f"opt_pur1{opt_pur1}")
-    # logger.info(f"opt_pur2{opt_pur2}")
-    # logger.info(f"opt_pur3{opt_pur3}")
+    print(opt_pur1)
+    logger.info(f"opt_pur2{opt_pur2}")
+    logger.info(f"opt_pur3{opt_pur3}")
 
     optimal_point,pur,flag_nan = global_optima(opt_pur1,opt_pur2,opt_pur3,pos_pursuer,pos_evader,alpha,r,aux_act_pur2,aux_act_pur3,par_ellipsoide,which_area)
 

@@ -9,7 +9,6 @@ from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 
 def parse_yaml(context):
-    print('---------------------parse_yaml-----------------------------')
     # Load the crazyflies YAML file
     crazyflies_yaml = LaunchConfiguration('crazyflies_yaml_file').perform(context)
     with open(crazyflies_yaml, 'r') as file:
@@ -92,7 +91,6 @@ def parse_yaml(context):
     robots_list = []
     for robot in crazyflies['robots']:
         if crazyflies['robots'][robot]['enabled']:
-            print("------------------------------------------")
             if crazyflies['robots'][robot]['role'] == 'pursuer':
                 robots_list.append(robot)
                 Nodes.append(Node(
@@ -130,7 +128,7 @@ def parse_yaml(context):
         name='reach_avoid_nv1_node',
         output='screen',
         parameters=[{'pursuers': robots_list,
-                     'evader':evader}]
+                     'evaders':evader}]
     ))
             
     return Nodes

@@ -1,0 +1,60 @@
+[2.867s] Invoking command in '/home/bitdrones/ros2_ws/src/reach_avoid_nv1': PYTHONPATH=/home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/reach_avoid_nv1 build --build-base /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build install --record /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/install.log --single-version-externally-managed install_data
+[4.109s] running egg_info
+[4.109s] creating build/reach_avoid_nv1/reach_avoid_nv1.egg-info
+[4.197s] writing build/reach_avoid_nv1/reach_avoid_nv1.egg-info/PKG-INFO
+[4.197s] writing dependency_links to build/reach_avoid_nv1/reach_avoid_nv1.egg-info/dependency_links.txt
+[4.198s] writing entry points to build/reach_avoid_nv1/reach_avoid_nv1.egg-info/entry_points.txt
+[4.199s] writing requirements to build/reach_avoid_nv1/reach_avoid_nv1.egg-info/requires.txt
+[4.199s] writing top-level names to build/reach_avoid_nv1/reach_avoid_nv1.egg-info/top_level.txt
+[4.200s] writing manifest file 'build/reach_avoid_nv1/reach_avoid_nv1.egg-info/SOURCES.txt'
+[4.318s] reading manifest file 'build/reach_avoid_nv1/reach_avoid_nv1.egg-info/SOURCES.txt'
+[4.319s] writing manifest file 'build/reach_avoid_nv1/reach_avoid_nv1.egg-info/SOURCES.txt'
+[4.319s] running build
+[4.320s] running build_py
+[4.320s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build
+[4.320s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib
+[4.320s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.320s] copying reach_avoid_nv1/optimal_control_old.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.320s] copying reach_avoid_nv1/reach_avoid_node.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.320s] copying reach_avoid_nv1/simulation.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.321s] copying reach_avoid_nv1/simulation_noise.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.321s] copying reach_avoid_nv1/__init__.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.321s] copying reach_avoid_nv1/optimal_control_noise.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.321s] copying reach_avoid_nv1/optimal_control.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.321s] copying reach_avoid_nv1/optimal_control_exp.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.322s] copying reach_avoid_nv1/controller_node.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1
+[4.322s] running install
+[4.328s] running install_lib
+[4.363s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/optimal_control_old.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/reach_avoid_node.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/simulation.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/simulation_noise.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/__init__.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.364s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/optimal_control_noise.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.365s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/optimal_control.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.365s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/optimal_control_exp.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.365s] copying /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build/lib/reach_avoid_nv1/controller_node.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1
+[4.366s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/optimal_control_old.py to optimal_control_old.cpython-310.pyc
+[4.369s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/reach_avoid_node.py to reach_avoid_node.cpython-310.pyc
+[4.372s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/simulation.py to simulation.cpython-310.pyc
+[4.376s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/simulation_noise.py to simulation_noise.cpython-310.pyc
+[4.380s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/__init__.py to __init__.cpython-310.pyc
+[4.381s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/optimal_control_noise.py to optimal_control_noise.cpython-310.pyc
+[4.388s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/optimal_control.py to optimal_control.cpython-310.pyc
+[4.396s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/optimal_control_exp.py to optimal_control_exp.cpython-310.pyc
+[4.396s] byte-compiling /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1/controller_node.py to controller_node.cpython-310.pyc
+[4.399s] running install_data
+[4.400s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/ament_index
+[4.400s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/ament_index/resource_index
+[4.400s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/ament_index/resource_index/packages
+[4.401s] copying resource/reach_avoid_nv1 -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/ament_index/resource_index/packages
+[4.401s] copying package.xml -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/reach_avoid_nv1
+[4.402s] creating /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/reach_avoid_nv1/launch
+[4.402s] copying launch/reach_avoid_launch.py -> /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/share/reach_avoid_nv1/launch
+[4.402s] running install_egg_info
+[4.508s] Copying build/reach_avoid_nv1/reach_avoid_nv1.egg-info to /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages/reach_avoid_nv1-0.0.0-py3.10.egg-info
+[4.511s] running install_scripts
+[5.303s] Installing reach_avoid_node script to /home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/reach_avoid_nv1
+[5.305s] writing list of installed files to '/home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/install.log'
+[5.353s] Invoked command in '/home/bitdrones/ros2_ws/src/reach_avoid_nv1' returned '0': PYTHONPATH=/home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/bitdrones/ros2_ws/src/reach_avoid_nv1/install/reach_avoid_nv1/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base build/reach_avoid_nv1 build --build-base /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/build install --record /home/bitdrones/ros2_ws/src/reach_avoid_nv1/build/reach_avoid_nv1/install.log --single-version-externally-managed install_data
