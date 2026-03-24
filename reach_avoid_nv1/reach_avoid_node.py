@@ -314,11 +314,11 @@ class reach_avoid_node(Node):
         self.evader_mode = 1 #1 - optimal, 2 - straight (0,0,0)
 
         self.dt=self.timer_period
-        self.evader_speed = 1e-2*np.array([50]) # evader at 5 cm/s  for initial experiments
+        self.evader_speed = 1e-2*np.array([50]) # evader at 5 cm/s # consider dt = 0.1s, so 1e-2*50*0.1 = 5 cm/s
         # self.pursuers_speed = np.array([20,40,30,21,32])
-        self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*70 #each pursuer at 6 cm/s for initial experiments
+        self.pursuers_speed = 1e-2*np.ones(self.number_pursuers)*70 #each pursuer at 7 cm/s for initial experiments
         # self.r = np.array([30,15,20,50,25])
-        self.r = np.ones(self.number_pursuers)*0.3  #capture radius set to 50 cm for safety
+        self.r = np.ones(self.number_pursuers)*0.3  #capture radius set to 30 cm for safety # 30 should be the minimum capture radius for safety
 
         self.noisy_speedp = self.pursuers_speed
         self.noisy_speede = self.evader_speed
@@ -344,12 +344,9 @@ class reach_avoid_node(Node):
             a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
             self.par_ellipsoide = np.array([a,b,c])
 
-        #min 5cm/s max 100cm/s
-        #ruido posicao 0.1
-        #ruido velocidade metade da velocidade
         self.failure_rate = 0.0
-        self.mode=1
-
+        self.mode=1 # 1 - only the assigned pursuers move, 2 - everyone move to opt point, 3 - assigned pursuer moves to opt point and everyone else to their local opt point
+        self.noise_mode = 0 # 0 - no noise, 1 - constant noise, 2 - noise proportional to distance between closer puursuer and evader
         self.get_logger().info(f'current pos{self.current_pos}')
 
         self.pos_pursuers = np.round(np.asarray(self.current_pos[:self.number_pursuers,:], dtype=float),4)
@@ -380,10 +377,14 @@ class reach_avoid_node(Node):
         if self.pursuer_win(self.pos_evader,self.pos_pursuers,self.r):
             self.info("Pursuers win!")
             self.state = 3
+            for i in range(self.n_agents):
+                self.land_flag[i] = True
 
         if self.evader_win(self.pos_evader):
             self.info("Evader wins!")
             self.state = 3
+            for i in range(self.n_agents):
+                self.land_flag[i] = True
 
         if self.state !=3:
             
@@ -391,9 +392,18 @@ class reach_avoid_node(Node):
             self.info(f"pos_evaders:{self.pos_evader}")
             # self.info(f"x0:{self.x0}")
 
-            self.evader_speed_noisy = self.evader_speed + np.random.uniform(0,15)-10
-            self.noisy_speede = self.evader_speed + np.random.uniform(0,15)-10
-            self.noisy_speede = np.clip(self.noisy_speede,0,np.min(self.pursuers_speed))
+
+
+            if self.noise_mode == 0:
+                self.std_noise_e = 0.0
+            elif self.noise_mode == 1:
+                self.std_noise_e = 0.25*self.evader_speed
+            else:
+                self.std_noise_e = 0.2*0.25*self.evader_speed*np.linalg.norm(self.pos_evader - self.pos_pursuers[np.argmin(np.linalg.norm(self.pos_evader - self.pos_pursuers, axis=1))]) #first 0.2 is scaling to environment assuming maximum 5 meters of distance, second 0.25 is to have noise proportional to speed and not higher than 25% of speed
+
+
+            self.noisy_speede = self.evader_speed + np.random.uniform(-self.std_noise_e,self.std_noise_e)
+            self.noisy_speede = np.clip(self.noisy_speede,0,0.99*np.min(self.pursuers_speed))
 
             self.vel_pursuer_real,self.vel_evader,self.x0_eva,flag_error1 = Optimal_Control(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0_eva,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.get_logger())
             self.vel_pursuer,self.vel_evader_noisy,self.x0,flag_error2 = Optimal_Control_noise(self.pos_pursuers,self.pos_evader,self.r,self.pursuers_speed,self.evader_speed,self.mode,self.dt,self.x0,self.noisy_speedp,self.noisy_speede,self.par_ellipsoide,self.which_area,self.evader_mode,self.estimated_evader_speed)
@@ -403,10 +413,14 @@ class reach_avoid_node(Node):
             if flag_error1:
                 self.info("Numerical error optimal control- stopping experiment")
                 self.state = 3
+                for i in range(self.n_agents):
+                    self.land_flag[i] = True
 
             if flag_error2:
                 self.info("Numerical error optimal control noise- stopping experiment")
                 self.state = 3
+                for i in range(self.n_agents):
+                    self.land_flag[i] = True
             
 
             self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
