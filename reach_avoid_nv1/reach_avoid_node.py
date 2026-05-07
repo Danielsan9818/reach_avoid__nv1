@@ -155,7 +155,7 @@ class reach_avoid_node(Node):
                     
                     self.send_position(self.send_positions_pur_eva[i,:],robot)
                     # self.send_position(self.test_send_position[i,:],robot)
-                self.send_optimal_capture_point(self.x0,self.x0_eva)
+                self.send_optimal_capture_point(self.transform_to_global(self.x0),self.transform_to_global(self.x0_eva))
                 # if np.linalg.norm(self.current_pos-target_r) < 0.05:
                 self.send_target_parameters()
             
@@ -366,7 +366,8 @@ class reach_avoid_node(Node):
         self.pos_evader = np.round(np.asarray(self.current_pos[self.number_pursuers,:],dtype=float),4)
         self.get_logger().info(f'self.pos_evader{self.pos_evader}')
 
-        self.x0 = self.pos_evader - 0.1*self.pos_evader
+        aux_x0 = self.transform_to_center0(self.pos_evader)
+        self.x0 = aux_x0 - 0.1*aux_x0
         self.x0_eva = self.x0
         self.get_logger().info(f'x0:{self.x0}')
 
