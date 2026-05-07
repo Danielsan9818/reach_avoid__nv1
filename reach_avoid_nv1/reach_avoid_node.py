@@ -150,13 +150,14 @@ class reach_avoid_node(Node):
                 # target_r = self.interpolated_points[self.current_point_index] #here you calculate your desired position
                 self.Control_loop() #call your control loop that returns the desired position
 
-                self.test_send_position = np.array(([-0.5,0,0.3],[-1,0,0.3]))
+                # self.test_send_position = np.array(([-0.5,0,0.3],[-1,0,0.3]))
                 for i,robot in enumerate(self.robots):
                     
                     self.send_position(self.send_positions_pur_eva[i,:],robot)
                     # self.send_position(self.test_send_position[i,:],robot)
-                    self.send_optimal_capture_point(self.x0,self.x0_eva)
+                self.send_optimal_capture_point(self.x0,self.x0_eva)
                 # if np.linalg.norm(self.current_pos-target_r) < 0.05:
+                self.send_target_parameters()
             
             elif self.state == 3:
                 self.get_logger().info(f' landing')
@@ -302,6 +303,18 @@ class reach_avoid_node(Node):
 
         self.optimal_cp_pub_eva.publish(msg_eva)
 
+    def send_target_parameters(self):
+        msg = Position()
+        msg.x = float(self.target_center[0])
+        msg.y = float(self.target_center[1])
+        msg.z = float(self.target_center[2])
+        self.target_center_pub.publish(msg)
+
+        msg2 = Float32MultiArray()
+        msg2.data = [float(self.par_ellipsoide[0]), float(self.par_ellipsoide[1]), float(self.par_ellipsoide[2]), float(self.par_ellipsoide[3]), float(self.which_area)]
+        self.target_parameters_pub.publish(msg2)
+
+
     def interpolate(self, p0, p1, n):
         p0 = np.array(p0)
         p1 = np.array(p1)
@@ -329,24 +342,24 @@ class reach_avoid_node(Node):
         self.which_area = 1  #1- ellipsoid, 2 - lp ball
         if self.which_area==1:
 
-            center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 0.08, 0.08, 0.02                   # ellipse axes lengths
-            self.par_ellipsoide = np.array([a,b,c])
+            self.target_center = np.array([0, 0, 0])  # x0, y0, z0
+            a, b, c, p = 0.08, 0.08, 0.02 , 0                  # ellipse axes lengths and 0 for fixed vector size
+            self.par_ellipsoide = np.array([a,b,c,p])
 
         elif (self.which_area==2):
-            center = np.array([0, 0, 0])  # x0, y0, z0
-            a,b,c,p = 0.08,0.05,0.1,3 # scale x,y,x and exponential
+            self.target_center = np.array([0, 0, 0])  # x0, y0, z0
+            a,b,c,p = 0.08, 0.05, 0.1, 3 # scale x,y,z and exponential
             self.par_ellipsoide = np.array([a,b,c,p])                   # lp- ball 
 
         else:
 
-            center = np.array([0, 0, 0])  # x0, y0, z0
-            a, b, c = 0.08, 0.08, 2                   # ellipse axes lengths
-            self.par_ellipsoide = np.array([a,b,c])
+            self.target_center = np.array([0, 0, 0])  # x0, y0, z0
+            a, b, c, p = 0.08, 0.08, 2 , 0                   # ellipse axes lengths
+            self.par_ellipsoide = np.array([a,b,c,p])
 
         self.failure_rate = 0.0
         self.mode=1 # 1 - only the assigned pursuers move, 2 - everyone move to opt point, 3 - assigned pursuer moves to opt point and everyone else to their local opt point
-        self.noise_mode = 0 # 0 - no noise, 1 - constant noise, 2 - noise proportional to distance between closer puursuer and evader
+        self.noise_mode = 0 # 0 - no noise, 1 - constant noise, 2 - noise proportional to distance between closer pursuer and evader
         self.get_logger().info(f'current pos{self.current_pos}')
 
         self.pos_pursuers = np.round(np.asarray(self.current_pos[:self.number_pursuers,:], dtype=float),4)
@@ -360,8 +373,15 @@ class reach_avoid_node(Node):
 
         self.optimal_cp_pub_pur = self.create_publisher(Position,'/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
         self.optimal_cp_pub_eva = self.create_publisher(Position,'/optimal_capture_point_eva', 10) #create list with publishers for optimal capture point for evader
+        self.target_center_pub = self.create_publisher(Position,'/target_center', 10) #create publisher for target center
+        self.target_parameters_pub = self.create_publisher(Float32MultiArray,'/target_parameters', 10) #create publisher for target parameters
 
-
+    def transform_to_center0(self,pos):
+        return pos - self.target_center
+    
+    def transform_to_global(self,pos):
+        return pos + self.target_center
+    
     def Control_loop(self):
 
         if self.game_start:
@@ -371,8 +391,10 @@ class reach_avoid_node(Node):
 
         self.info(f"type position{type(self.current_pos)}")
 
-        self.pos_pursuers = self.current_pos[:self.number_pursuers,:]
-        self.pos_evader = self.current_pos[self.number_pursuers,:]
+        self.inside_pos = self.transform_to_center0(self.current_pos)
+
+        self.pos_pursuers = self.inside_pos[:self.number_pursuers,:]
+        self.pos_evader = self.inside_pos[self.number_pursuers,:]
 
         if self.pursuer_win(self.pos_evader,self.pos_pursuers,self.r):
             self.info("Pursuers win!")
@@ -422,8 +444,12 @@ class reach_avoid_node(Node):
                 for i in range(self.n_agents):
                     self.land_flag[i] = True
             
+            commands = np.vstack((self.vel_pursuer,self.vel_evader))
 
-            self.send_positions_pur_eva = np.vstack((self.vel_pursuer,self.vel_evader)) + self.current_pos
+
+            self.send_positions_pur_eva_target0 = commands + self.inside_pos
+
+            self.send_positions_pur_eva = self.transform_to_global(self.send_positions_pur_eva_target0)
             self.store_positions_before_limitation = self.send_positions_pur_eva
 
             self.send_positions_pur_eva = self.env_limitations(self.send_positions_pur_eva)
