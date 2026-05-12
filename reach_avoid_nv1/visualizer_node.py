@@ -5,7 +5,7 @@ import numpy as np
 # Incoming message types (from your existing network)
 from motion_capture_tracking_interfaces.msg import NamedPoseArray
 from crazyflie_interfaces.msg import Position
-from std_msgs.msg import Float32MultiArray, Float64, Float64MultiArray
+from std_msgs.msg import Float32MultiArray, Float64, Float64MultiArray, Float32
 
 # Outgoing message types (for Foxglove)
 from visualization_msgs.msg import Marker, MarkerArray
@@ -18,11 +18,9 @@ class FoxgloveVisualizerNode(Node):
         # Parameters (Match these to your main node)
         self.declare_parameter('pursuers', ['C26']) 
         self.declare_parameter('evader', 'C25')
-        self.declare_parameter('capture_radius', 0.3) # 30 cm radius from your code
 
         self.pursuers = self.get_parameter('pursuers').value
         self.evader = self.get_parameter('evader').value
-        self.capture_radius = self.get_parameter('capture_radius').value
         self.all_agents = self.pursuers + [self.evader]
 
         # Internal State Variables
@@ -41,10 +39,9 @@ class FoxgloveVisualizerNode(Node):
         self.create_subscription(Position, '/target_center', self.target_center_callback, 10)
         self.create_subscription(Float32MultiArray, '/target_parameters', self.target_params_callback, 10)
         self.create_subscription(Position, '/optimal_capture_point', self.pursuer_cp_callback, 10)
-        
-        # NOTE: You will need to add publishers for these two in your main node (see instructions below)
-        self.create_subscription(Float64, '/metrics/actual_speed', self.actual_speed_callback, 10)
-        self.create_subscription(Float64, '/metrics/estimated_speed', self.estimated_speed_callback, 10)
+        self.create_subscription(Float32MultiArray, '/capture_radius', self.capture_radius_callback, 10)
+        self.create_subscription(Float32MultiArray, '/speeds', self.speeds_callback, 10)
+        self.create_subscription(Float32, '/payoff', self.payoff_callback, 10)
 
         # ==========================================
         # PUBLISHERS (Broadcasting to Foxglove)
@@ -54,9 +51,7 @@ class FoxgloveVisualizerNode(Node):
         self.first_cp_pub = self.create_publisher(Marker, '/foxglove/first_capture_point', 10)
         self.current_cp_pub = self.create_publisher(Marker, '/foxglove/current_capture_point', 10)
         
-        self.payoff_pub = self.create_publisher(Float64, '/foxglove/payoff', 10)
         self.distances_pub = self.create_publisher(Float64MultiArray, '/foxglove/pursuer_distances', 10)
-        self.speeds_pub = self.create_publisher(Float64MultiArray, '/foxglove/evader_speeds', 10)
 
         # Timer to run the visualizer at 10Hz
         self.timer = self.create_timer(0.1, self.publish_visuals)
@@ -83,11 +78,6 @@ class FoxgloveVisualizerNode(Node):
         marker = self.create_sphere_marker("capture_points", 301, cp, [0.08, 0.08, 0.08], [1.0, 1.0, 0.0, 1.0]) # Yellow
         self.current_cp_pub.publish(marker)
 
-    def actual_speed_callback(self, msg):
-        self.current_actual_speed = msg.data
-
-    def estimated_speed_callback(self, msg):
-        self.current_estimated_speed = msg.data
 
     def poses_callback(self, msg):
         # Update current positions from motion capture
@@ -96,6 +86,16 @@ class FoxgloveVisualizerNode(Node):
                 self.agent_positions[pose.name][0] = pose.pose.position.x
                 self.agent_positions[pose.name][1] = pose.pose.position.y
                 self.agent_positions[pose.name][2] = pose.pose.position.z
+
+    def capture_radius_callback(self, msg):
+        for i, data in enumerate(msg.data):
+            self.capture_radius[i] = data
+
+    def speeds_callback(self, msg):
+        self.real_evader_speed = msg.data[0]
+        self.noisy_evader_speed = msg.data[1]
+        self.estimated_evader_speed = msg.data[2]
+        self.real_pursuer_speed = msg.data[3:3+len(self.pursuers)]
 
 
     # --- Main Visualization Loop ---
@@ -151,13 +151,6 @@ class FoxgloveVisualizerNode(Node):
         dist_msg.data = distances
         self.distances_pub.publish(dist_msg)
 
-        # Calculate Payoff
-        payoff_msg = Float64()
-        if self.which_area == 1:
-            payoff_msg.data = float((evader_pos_local[0]**2) / self.target_params[0]**2 + (evader_pos_local[1]**2) / self.target_params[1]**2 + (evader_pos_local[2]**2) / self.target_params[2]**2 - 1)
-        elif self.which_area == 2:
-            payoff_msg.data = float((np.abs(evader_pos_local[0] / self.target_params[0]))**self.target_params[3] + (np.abs(evader_pos_local[1] / self.target_params[1]))**self.target_params[3]  + (np.abs(evader_pos_local[2] / self.target_params[2]))**self.target_params[3]  - 1)
-        self.payoff_pub.publish(payoff_msg)
 
     # --- Helper functions to keep code clean ---
     def create_cube_marker(self, ns, id, pos, scale, color):

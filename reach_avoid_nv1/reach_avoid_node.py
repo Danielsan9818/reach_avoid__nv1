@@ -155,9 +155,14 @@ class reach_avoid_node(Node):
                     
                     self.send_position(self.send_positions_pur_eva[i,:],robot)
                     # self.send_position(self.test_send_position[i,:],robot)
+
+                
                 self.send_optimal_capture_point(self.transform_to_global(self.x0),self.transform_to_global(self.x0_eva))
                 # if np.linalg.norm(self.current_pos-target_r) < 0.05:
                 self.send_target_parameters()
+                self.send_capture_radius()
+                self.send_speed_info()
+                self.send_payoff()
             
             elif self.state == 3:
                 self.get_logger().info(f' landing')
@@ -289,6 +294,11 @@ class reach_avoid_node(Node):
 
         self.position_pub[robot].publish(msg)
 
+    def send_payoff(self):
+        msg = Float32()
+        msg.data = self.gameValue
+        self.payoff_pub.publish(msg)
+
     def send_optimal_capture_point(self,x0,x0_eva):
         msg_pur = Position()
         msg_pur.x = float(x0[0])
@@ -313,6 +323,20 @@ class reach_avoid_node(Node):
         msg2 = Float32MultiArray()
         msg2.data = [float(self.par_ellipsoide[0]), float(self.par_ellipsoide[1]), float(self.par_ellipsoide[2]), float(self.par_ellipsoide[3]), float(self.which_area)]
         self.target_parameters_pub.publish(msg2)
+
+    def send_speed_info(self):
+        # order is real evader speed, noisy evader speed, estimated evader speed, and then pursuer speeds
+        msg = Float32MultiArray()
+        msg.data = [float(self.evader_speed),float(self.noisy_speede),float(self.estimated_evader_speed)]
+        for i in range(1,self.number_pursuers):
+            msg.data.append(float(self.pursuers_speed[i]))
+        self.speeds_pub.publish(msg)
+
+    def send_capture_radius(self):
+        msg = Float32MultiArray()
+        for i in range(self.number_pursuers):
+            msg.data.append(float(self.r[i]))
+        self.r_pub.publish(msg)
 
 
     def interpolate(self, p0, p1, n):
@@ -376,6 +400,10 @@ class reach_avoid_node(Node):
         self.optimal_cp_pub_eva = self.create_publisher(Position,'/optimal_capture_point_eva', 10) #create publisher for optimal capture point for evader
         self.target_center_pub = self.create_publisher(Position,'/target_center', 10) #create publisher for target center
         self.target_parameters_pub = self.create_publisher(Float32MultiArray,'/target_parameters', 10) #create publisher for target parameters
+        self.speeds_pub = self.create_publisher(Float32MultiArray,'/speeds', 10) #create publisher for speeds of agents
+        self.r_pub = self.create_publisher(Float32MultiArray,'/capture_radius', 10) #create publisher for capture radius
+        self.payoff_pub = self.create_publisher(Float32,'/payoff', 10) #create publisher for payoff
+
 
     def transform_to_center0(self,pos):
         return pos - self.target_center
@@ -491,13 +519,13 @@ class reach_avoid_node(Node):
     
     def evader_win(self,pos_evader):
         if self.which_area==1:
-            gameValue = (pos_evader[0]**2) / self.par_ellipsoide[0]**2 + (pos_evader[1]**2) / self.par_ellipsoide[1]**2 + (pos_evader[2]**2) / self.par_ellipsoide[2]**2 - 1
+            self.gameValue = (pos_evader[0]**2) / self.par_ellipsoide[0]**2 + (pos_evader[1]**2) / self.par_ellipsoide[1]**2 + (pos_evader[2]**2) / self.par_ellipsoide[2]**2 - 1
         elif (self.which_area==2):
-            gameValue = (np.abs(pos_evader[0] / self.par_ellipsoide[0]))**self.par_ellipsoide[3] + (np.abs(pos_evader[1] / self.par_ellipsoide[1]))**self.par_ellipsoide[3]  + (np.abs(pos_evader[2] / self.par_ellipsoide[2]))**self.par_ellipsoide[3]  - 1
+            self.gameValue = (np.abs(pos_evader[0] / self.par_ellipsoide[0]))**self.par_ellipsoide[3] + (np.abs(pos_evader[1] / self.par_ellipsoide[1]))**self.par_ellipsoide[3]  + (np.abs(pos_evader[2] / self.par_ellipsoide[2]))**self.par_ellipsoide[3]  - 1
         else:
-            gameValue = (pos_evader[0]**2) / self.par_ellipsoide[0]**2 + (pos_evader[1]**2) / self.par_ellipsoide[1]**2 + (pos_evader[2]**2) / self.par_ellipsoide[2]**2 - 1
+            self.gameValue = (pos_evader[0]**2) / self.par_ellipsoide[0]**2 + (pos_evader[1]**2) / self.par_ellipsoide[1]**2 + (pos_evader[2]**2) / self.par_ellipsoide[2]**2 - 1
             
-        if gameValue<1:
+        if self.gameValue<1:
             return True
         return False
 
