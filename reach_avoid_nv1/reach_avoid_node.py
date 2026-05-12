@@ -372,8 +372,8 @@ class reach_avoid_node(Node):
         self.get_logger().info(f'x0:{self.x0}')
 
 
-        self.optimal_cp_pub_pur = self.create_publisher(Position,'/optimal_capture_point', 10) #create list with publishers for optimal capture point for pursuers
-        self.optimal_cp_pub_eva = self.create_publisher(Position,'/optimal_capture_point_eva', 10) #create list with publishers for optimal capture point for evader
+        self.optimal_cp_pub_pur = self.create_publisher(Position,'/optimal_capture_point', 10) #create publisher for optimal capture point for pursuers
+        self.optimal_cp_pub_eva = self.create_publisher(Position,'/optimal_capture_point_eva', 10) #create publisher for optimal capture point for evader
         self.target_center_pub = self.create_publisher(Position,'/target_center', 10) #create publisher for target center
         self.target_parameters_pub = self.create_publisher(Float32MultiArray,'/target_parameters', 10) #create publisher for target parameters
 
